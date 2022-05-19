@@ -1,0 +1,82 @@
+#!/bin/bash
+
+PATH_ZET="$(date +"%Y%m%d%I%M%S")"
+PATH_ZET_FULL="$(pwd)/$PATH_ZET"
+PATH_ZET_FILE="$PATH_ZET/README.md"
+
+# create zettel
+function create() {
+
+  mkdir $PATH_ZET
+  touch $PATH_ZET_FILE
+
+  nvim $PATH_ZET_FILE
+}
+
+# open last zettel
+function open_last_note() {
+  LAST_NOTE=$(ls -td $(pwd)/**/* | head -1)
+  nvim $LAST_NOTE
+}
+
+# push to github
+function push_to_github() {
+  GIT_REPO=$(git config --get remote.origin.url)
+  if [[ $GIT_REPO == *"github.com"* ]]; then
+    git add .
+    git commit -m "zettel"
+    git push
+    echo "Pushing to $GIT_REPO"
+  else
+    echo "not a github repo"
+  fi
+}
+
+function search_notes_by_tags () {
+  echo "searching for notes with tag: $1"
+  rg \#$1
+}
+
+function search_notes_by_title() {
+  echo "Searching for notes"
+}
+
+
+function get_list_of_notes() {
+  # todo: get list of notes with title if set flag
+  for i in $(ls -d */); do echo ${i%%/}; done
+}
+
+function get_list_of_tags() {
+  echo "Getting list of tags"
+}
+
+# get list of notes with tags
+while getopts "t:" opt; do
+  case $opt in
+      t) tags+=("$OPTARG");;
+      #...
+  esac
+done
+
+shift $((OPTIND -1))
+for tag in "${tags[@]}"; do
+    search_notes_by_tags $tag 
+done
+
+
+if [[ "$1" == "add" ]]; then
+  echo "create new note"
+  create
+elif [[ "$1" == "last" ]]; then
+  echo "open last note"
+  open_last_note
+elif [[ "$1" == "push" ]]; then
+  push_to_github
+elif [[ "$1" == "list" ]]; then
+  get_list_of_notes 
+fi
+
+# TODO
+# - add a fucntion to search by title 
+# - add a function to search by tags
